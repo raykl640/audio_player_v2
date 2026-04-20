@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Audio Player</title>
+  <style>
+    body { font-family: monospace; max-width: 400px; margin: 60px auto; padding: 20px; background: #111; color: #eee; }
+    h2 { margin-bottom: 20px; }
+    button { margin: 4px; padding: 8px 14px; cursor: pointer; background: #333; color: #eee; border: 1px solid #555; }
+    button:hover { background: #555; }
+    label { display: block; margin-top: 12px; }
+    input[type=range] { width: 100%; margin-top: 4px; }
+    #time { margin-top: 12px; font-size: 0.9em; color: #aaa; }
+    #status { margin-top: 8px; font-size: 0.8em; color: #888; }
+  </style>
+</head>
+<body>
+  <h2>Audio Player</h2>
+
+  <label>Load Audio File:
+    <input type="file" id="fileInput" accept="audio/*" />
+  </label>
+
+  <audio id="audio"></audio>
+
+  <div style="margin-top:16px;">
+    <button id="playBtn" disabled>Play</button>
+    <button id="muteBtn" disabled>Mute</button>
+    <button id="loopBtn" disabled>Loop: OFF</button>
+  </div>
+
+  <label>Volume:
+    <input type="range" id="volume" min="0" max="1" step="0.05" value="1" disabled />
+  </label>
+
+  <label>Speed:
+    <select id="speed" disabled>
+      <option value="0.5">0.5x</option>
+      <option value="1" selected>1x</option>
+      <option value="1.5">1.5x</option>
+      <option value="2">2x</option>
+    </select>
+  </label>
+
+  <div style="margin-top:12px;">
+    <button id="backBtn" disabled>&lt;&lt; -10s</button>
+    <button id="fwdBtn" disabled>+10s &gt;&gt;</button>
+  </div>
+
+  <div id="time">Time: 0:00 / 0:00</div>
+  <div id="status">Load a file to begin.</div>
+
+  <script>
+    var audio = document.getElementById('audio');
+    var fileInput = document.getElementById('fileInput');
+    var playBtn = document.getElementById('playBtn');
+    var muteBtn = document.getElementById('muteBtn');
+    var loopBtn = document.getElementById('loopBtn');
+    var volume = document.getElementById('volume');
+    var speed = document.getElementById('speed');
+    var backBtn = document.getElementById('backBtn');
+    var fwdBtn = document.getElementById('fwdBtn');
+    var timeEl = document.getElementById('time');
+    var status = document.getElementById('status');
+
+    function enable() {
+      var controls = [playBtn, muteBtn, loopBtn, volume, speed, backBtn, fwdBtn];
+      for (var i = 0; i < controls.length; i++) {
+        controls[i].disabled = false;
+      }
+    }
+
+    function formatTime(s) {
+      var mins = Math.floor(s / 60);
+      var secs = Math.floor(s % 60);
+      return mins + ':' + (secs < 10 ? '0' : '') + secs;
+    }
+
+    fileInput.addEventListener('change', function() {
+      var file = fileInput.files[0];
+      if (!file) return;
+      audio.src = URL.createObjectURL(file);
+      audio.load();
+      enable();
+      status.textContent = 'Loaded: ' + file.name;
+    });
+
+    playBtn.addEventListener('click', function() {
+      if (audio.paused) {
+        audio.play();
+        playBtn.textContent = 'Pause';
+      } else {
+        audio.pause();
+        playBtn.textContent = 'Play';
+      }
+    });
+
+    muteBtn.addEventListener('click', function() {
+      audio.muted = !audio.muted;
+      muteBtn.textContent = audio.muted ? 'Unmute' : 'Mute';
+    });
+
+    loopBtn.addEventListener('click', function() {
+      audio.loop = !audio.loop;
+      loopBtn.textContent = 'Loop: ' + (audio.loop ? 'ON' : 'OFF');
+    });
+
+    volume.addEventListener('input', function() {
+      audio.volume = volume.value;
+    });
+
+    speed.addEventListener('change', function() {
+      audio.playbackRate = speed.value;
+    });
+
+    backBtn.addEventListener('click', function() {
+      audio.currentTime = Math.max(0, audio.currentTime - 10);
+    });
+
+    fwdBtn.addEventListener('click', function() {
+      audio.currentTime = Math.min(audio.duration, audio.currentTime + 10);
+    });
+
+    audio.addEventListener('timeupdate', function() {
+      timeEl.textContent = 'Time: ' + formatTime(audio.currentTime) + ' / ' + formatTime(audio.duration || 0);
+    });
+
+    audio.addEventListener('ended', function() {
+      playBtn.textContent = 'Play';
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (!audio.src) return;
+      if (e.code === 'Space') { e.preventDefault(); playBtn.click(); }
+      if (e.key === 'm') muteBtn.click();
+      if (e.key === 'l') loopBtn.click();
+      if (e.key === 'ArrowRight') fwdBtn.click();
+      if (e.key === 'ArrowLeft') backBtn.click();
+    });
+  </script>
+</body>
+</html>
